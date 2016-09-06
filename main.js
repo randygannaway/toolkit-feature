@@ -1,53 +1,26 @@
 /* eslint-disable no-unused-vars, no-undef, no-shadow */
+/**
+ * Use this template to add new js functions to your features
+ *
+ * To help isolate and protect our functions and variables from
+ * the production code, we want to contain all of our optional features
+ * within the global ynabToolKit object, which is created on page load.
+ *
+ * Note: Using this.observe() is optional, but we use a MutationObserver instance
+ * to evaluate changes on the page and feed those changes to each function
+ * that might want to act on a specific change in the DOM.
+ */
+
 (function poll() {
+  // Waits until an external function gives us the all clear that we can run (at /shared/main.js)
   if (typeof ynabToolKit !== 'undefined' && ynabToolKit.pageReady === true) {
-    ynabToolKit.saveToGoogleCalendar = function () {
+    ynabToolKit.awesomeFeature = (function () {
+      // Pull in Google calendar API
       var CLIENT_ID = '158925675835-uhm7ksaftbi7ef3vp9otk9kng4opg4qb.apps.googleusercontent.com';
       var SCOPES = ['https://www.googleapis.com/auth/calendar'];
       var googleAPI = document.createElement('SCRIPT');
-      googleAPI.src = 'https://apis.google.com/js/client.js?onload=checkAuth';
+      googleAPI.src = 'https://apis.google.com/js/client.js';
       document.head.appendChild(googleAPI);
-      function buttons() {
-        var newButton = document.createElement('BUTTON');
-        newButton.setAttribute('class', 'button button-primary');
-        // newButton.setAttribute('onclick', 'alert()');
-        newButton.addEventListener('click', newEvent);
-        // newButton.click(alert('testing'));
-        newButton.innerHTML = 'Save + Calendar';
-        document.getElementsByClassName('ynab-grid-actions')[0].appendChild(newButton);
-        var authButton = document.createElement('BUTTON');
-        authButton.setAttribute('id', 'authorize-button');
-        authButton.setAttribute('class', 'ember-view button');
-        authButton.setAttribute('title', 'Click to authorize google calendar');
-        authButton.addEventListener('click', handleAuthClick);
-        authButton.innerHTML = 'Connect Calendar';
-        document.getElementsByClassName('accounts-toolbar-left')[0].appendChild(authButton);
-      }
-
-      function saveToGoogleCalendarInit() {
-        var addTransactionRow = getAddTransactionRow();
-        if (addTransactionRow) {
-          buttons();
-        } else {
-          setTimeout(saveToGoogleCalendarInit, 25);
-        }
-      }
-
-      function getAddTransactionRow() {
-        var addRow = document.getElementsByClassName('ynab-grid-add-rows');
-
-        if (addRow.length) {
-          var addTransaction = addRow[0].getElementsByClassName('ynab-grid-body-row');
-          if (addTransaction.length) {
-            return addTransaction[0];
-          }
-
-          return null;
-        }
-
-        return null;
-      }
-
       /**
        * BEGIN BLOCK FROM GOOGLE API SITE
        *
@@ -64,24 +37,21 @@
        * @param {Object} authResult Authorization result.
        */
       function handleAuthResult(authResult) {
-        var authorizeDiv = document.getElementById('authorize-button');
         if (authResult && !authResult.error) {
-          // Hide auth UI, then load client library.
-          authorizeDiv.style.display = 'none';
+          // Load client library.
           loadCalendarApi();
         } else {
-           // Show auth UI, allowing the user to initiate authorization by
-           // clicking authorize button.
-          authorizeDiv.style.display = 'inline';
+           // If not logged in and authorized return to authorize window
+          handleAuth();
         }
       }
 
       /**
-       * Initiate auth flow in response to user clicking authorize button.
+       * Initiate auth flow in response to user clicking save to calendar button.
        *
        * @param {Event} event Button click event.
        */
-      function handleAuthClick(event) {
+      function handleAuth(event) {
         gapi.auth.authorize(
         { client_id: CLIENT_ID, scope: SCOPES, immediate: false },
         handleAuthResult);
@@ -140,15 +110,16 @@
 
       function newEvent() {
         var getSave = document.getElementsByClassName('ynab-grid-actions')[0].childNodes[4];
+        var outflow = document.querySelectorAll('.ynab-grid-add-rows .ynab-grid-cell-payeeName input');
         var event = {
-          summary: 'Test event',
+          summary: outflow[0].value,
           location: '800 Howard St., San Francisco, CA 94103',
           description: 'A chance to hear more about Google\'s developer products.',
           start: {
-            date: '2016-09-12'
+            date: '2016-09-14'
           },
           end: {
-            date: '2016-09-12'
+            date: '2016-09-14'
           },
           recurrence: [
             'RRULE:FREQ=DAILY;COUNT=1'
@@ -170,11 +141,37 @@
         // This was reseting a form field originally??
       }
 
-      setTimeout(saveToGoogleCalendarInit, 25);
-    };
+      /**
+       * Adds a button with the option to save and send to Google Calendar
+       */
+      function saveToCalendarButton() {
+        var newButton = document.createElement('BUTTON');
+        newButton.setAttribute('class', 'button button-primary calendar-button');
+        newButton.addEventListener('click', newEvent);
+        newButton.innerHTML = 'Save + Calendar';
+        document.getElementsByClassName('ynab-grid-actions')[0].appendChild(newButton);
+      }
 
-    ynabToolKit.saveToGoogleCalendar(); // Activate itself
+      return {
+        invoke() {
+          // Code you expect to run each time your feature needs to update or modify YNAB's state
+          checkAuth();
+          saveToCalendarButton();
+        },
+
+        observe(changedNodes) {
+          var calendarButton = document.getElementsByClassName('calendar-button');
+          if (changedNodes.has('ynab-u modal-account-calendar ember-view modal-overlay active') && calendarButton.length < 1) {
+            ynabToolKit.awesomeFeature.invoke();
+            // in the set of changed nodes that indicates your function need may need to run.
+            // Call this.invoke() to activate your function if you find any class names
+          }
+        }
+      };
+    }()); // Keep feature functions contained within this object
+
+    // ynabToolKit.awesomeFeature.invoke(); // Run your script once on page load
   } else {
-    setTimeout(poll, 25);
+    setTimeout(poll, 250);
   }
 }());
