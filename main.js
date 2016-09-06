@@ -110,17 +110,18 @@
 
       function newEvent() {
         var getSave = document.getElementsByClassName('ynab-grid-actions')[0].childNodes[4];
-        var outflow = document.querySelectorAll('.ynab-grid-add-rows .ynab-grid-cell-date input');
-        var d = new Date(outflow[0].value).toISOString();
+        var dateCell = document.querySelectorAll('.ynab-grid-add-rows .ynab-grid-cell-date input');
+        var payeeName = document.querySelectorAll('.ynab-grid-add-rows .ynab-grid-cell-payeeName input');
+        var date = new Date(dateCell[0].value).toISOString();
+        var outflow = document.querySelectorAll('.ynab-grid-add-rows .ynab-grid-cell-outflow input');
         var event = {
-          summary: d.substr(0, 10),
-          location: '800 Howard St., San Francisco, CA 94103',
-          description: 'A chance to hear more about Google\'s developer products.',
+          summary: payeeName[0].value,
+          location: '$' + outflow[0].value,
           start: {
-            date: d.substr(0, 10)
+            date: date.substr(0, 10)
           },
           end: {
-            date: d.substr(0, 10)
+            date: date.substr(0, 10)
           },
           recurrence: [
             'RRULE:FREQ=DAILY;COUNT=1'
